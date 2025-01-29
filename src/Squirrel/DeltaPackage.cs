@@ -21,7 +21,7 @@ namespace Squirrel
     public interface IDeltaPackageBuilder
     {
         ReleasePackage CreateDeltaPackage(ReleasePackage basePackage, ReleasePackage newPackage, string outputFile);
-        ReleasePackage ApplyDeltaPackage(ReleasePackage basePackage, ReleasePackage deltaPackage, string outputFile);
+        ReleasePackage ApplyDeltaPackage(ReleasePackage basePackage, ReleasePackage deltaPackage, string outputFile, Action<bool> haveBasePackage = null/*新增*/, Action<int> onProgress = null/*新增*/);
     }
 
     public class DeltaPackageBuilder : IEnableLogger, IDeltaPackageBuilder
@@ -95,33 +95,36 @@ namespace Squirrel
             return new ReleasePackage(outputFile);
         }
 
-        public ReleasePackage ApplyDeltaPackage(ReleasePackage basePackage, ReleasePackage deltaPackage, string outputFile)
+        public ReleasePackage ApplyDeltaPackage(ReleasePackage basePackage, ReleasePackage deltaPackage, string outputFile, Action<bool> onHasBasePackage = null/*新增*/, Action<int> onProgress = null/*新增*/)
         {
             Contract.Requires(deltaPackage != null);
             Contract.Requires(!String.IsNullOrEmpty(outputFile) && !File.Exists(outputFile));
 
             string workingPath;
             string deltaPath;
-
+            
             using (Utility.WithTempDirectory(out deltaPath, localAppDirectory))
             using (Utility.WithTempDirectory(out workingPath, localAppDirectory)) {
                 var opts = new ExtractionOptions() { ExtractFullPath = true, Overwrite = true, PreserveFileTime = true };
-
+                
                 using (var za = ZipArchive.Open(deltaPackage.InputPackageFile))
                 using (var reader = za.ExtractAllEntries()) {
                     reader.WriteAllToDirectory(deltaPath, opts);
                 }
                 using (var za = ZipArchive.Open(basePackage.InputPackageFile))
                 using (var reader = za.ExtractAllEntries()) {
+                    onHasBasePackage(true);/*新增*/
+                    onProgress(10);
                     reader.WriteAllToDirectory(workingPath, opts);
                 }
-
+                onProgress(30);
+                
                 var pathsVisited = new List<string>();
 
                 var deltaPathRelativePaths = new DirectoryInfo(deltaPath).GetAllFilesRecursively()
                     .Select(x => x.FullName.Replace(deltaPath + Path.DirectorySeparatorChar, ""))
                     .ToArray();
-
+                
                 // Apply all of the .diff files
                 deltaPathRelativePaths
                     .Where(x => x.StartsWith("lib", StringComparison.InvariantCultureIgnoreCase))
@@ -132,6 +135,7 @@ namespace Squirrel
                         pathsVisited.Add(Regex.Replace(file, @"\.(bs)?diff$", "").ToLowerInvariant());
                         applyDiffToFile(deltaPath, file, workingPath);
                     });
+                onProgress(50);
 
                 // Delete all of the files that were in the old package but
                 // not in the new one.
@@ -142,6 +146,7 @@ namespace Squirrel
                         this.Log().Info("{0} was in old package but not in new one, deleting", x);
                         File.Delete(Path.Combine(workingPath, x));
                     });
+                onProgress(70);
 
                 // Update all the files that aren't in 'lib' with the delta
                 // package's versions (i.e. the nuspec file, etc etc).
@@ -151,6 +156,7 @@ namespace Squirrel
                         this.Log().Info("Updating metadata file: {0}", x);
                         File.Copy(Path.Combine(deltaPath, x), Path.Combine(workingPath, x), true);
                     });
+                onProgress(80);
 
                 this.Log().Info("Repacking into full package: {0}", outputFile);
                 using (var za = ZipArchive.Create())
@@ -159,6 +165,7 @@ namespace Squirrel
                     za.AddAllFromDirectory(workingPath);
                     za.SaveTo(tgt);
                 }
+                onProgress(100);
             }
 
             return new ReleasePackage(outputFile);

@@ -1,7 +1,7 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 12.00
-# Visual Studio 14
-VisualStudioVersion = 14.0.25420.1
+# Visual Studio Version 16
+VisualStudioVersion = 16.0.35026.282
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Squirrel", "src\Squirrel\Squirrel.csproj", "{1436E22A-FE3C-4D68-9A85-9E74DF2E6A92}"
 EndProject
@@ -176,7 +176,8 @@ Global
 		{C1D40624-A484-438A-B846-052F321C89D1}.Debug|Any CPU.Build.0 = Debug|Win32
 		{C1D40624-A484-438A-B846-052F321C89D1}.Debug|Mixed Platforms.ActiveCfg = Debug|Win32
 		{C1D40624-A484-438A-B846-052F321C89D1}.Debug|Mixed Platforms.Build.0 = Debug|Win32
-		{C1D40624-A484-438A-B846-052F321C89D1}.Debug|x64.ActiveCfg = Debug|Win32
+		{C1D40624-A484-438A-B846-052F321C89D1}.Debug|x64.ActiveCfg = Debug|x64
+		{C1D40624-A484-438A-B846-052F321C89D1}.Debug|x64.Build.0 = Debug|x64
 		{C1D40624-A484-438A-B846-052F321C89D1}.Debug|x86.ActiveCfg = Debug|Win32
 		{C1D40624-A484-438A-B846-052F321C89D1}.Debug|x86.Build.0 = Debug|Win32
 		{C1D40624-A484-438A-B846-052F321C89D1}.Mono Debug|Any CPU.ActiveCfg = Release|Win32
@@ -199,7 +200,8 @@ Global
 		{C1D40624-A484-438A-B846-052F321C89D1}.Release|Any CPU.Build.0 = Release|Win32
 		{C1D40624-A484-438A-B846-052F321C89D1}.Release|Mixed Platforms.ActiveCfg = Release|Win32
 		{C1D40624-A484-438A-B846-052F321C89D1}.Release|Mixed Platforms.Build.0 = Release|Win32
-		{C1D40624-A484-438A-B846-052F321C89D1}.Release|x64.ActiveCfg = Release|Win32
+		{C1D40624-A484-438A-B846-052F321C89D1}.Release|x64.ActiveCfg = Release|x64
+		{C1D40624-A484-438A-B846-052F321C89D1}.Release|x64.Build.0 = Release|x64
 		{C1D40624-A484-438A-B846-052F321C89D1}.Release|x86.ActiveCfg = Release|Win32
 		{C1D40624-A484-438A-B846-052F321C89D1}.Release|x86.Build.0 = Release|Win32
 		{1EEBACBC-6982-4696-BD4E-899ED0AC6CD2}.CIBuild|Any CPU.ActiveCfg = Release|Any CPU
@@ -362,11 +364,12 @@ Global
 		{4D3C8B70-075D-48A5-9FF3-EDB87347B136}.Coverage|x64.Build.0 = Debug|Win32
 		{4D3C8B70-075D-48A5-9FF3-EDB87347B136}.Coverage|x86.ActiveCfg = Release|Win32
 		{4D3C8B70-075D-48A5-9FF3-EDB87347B136}.Coverage|x86.Build.0 = Release|Win32
-		{4D3C8B70-075D-48A5-9FF3-EDB87347B136}.Debug|Any CPU.ActiveCfg = Debug|Win32
-		{4D3C8B70-075D-48A5-9FF3-EDB87347B136}.Debug|Any CPU.Build.0 = Debug|Win32
+		{4D3C8B70-075D-48A5-9FF3-EDB87347B136}.Debug|Any CPU.ActiveCfg = Debug|x64
+		{4D3C8B70-075D-48A5-9FF3-EDB87347B136}.Debug|Any CPU.Build.0 = Debug|x64
 		{4D3C8B70-075D-48A5-9FF3-EDB87347B136}.Debug|Mixed Platforms.ActiveCfg = Debug|Win32
 		{4D3C8B70-075D-48A5-9FF3-EDB87347B136}.Debug|Mixed Platforms.Build.0 = Debug|Win32
-		{4D3C8B70-075D-48A5-9FF3-EDB87347B136}.Debug|x64.ActiveCfg = Debug|Win32
+		{4D3C8B70-075D-48A5-9FF3-EDB87347B136}.Debug|x64.ActiveCfg = Debug|x64
+		{4D3C8B70-075D-48A5-9FF3-EDB87347B136}.Debug|x64.Build.0 = Debug|x64
 		{4D3C8B70-075D-48A5-9FF3-EDB87347B136}.Debug|x86.ActiveCfg = Debug|Win32
 		{4D3C8B70-075D-48A5-9FF3-EDB87347B136}.Debug|x86.Build.0 = Debug|Win32
 		{4D3C8B70-075D-48A5-9FF3-EDB87347B136}.Mono Debug|Any CPU.ActiveCfg = Debug|Win32
@@ -389,7 +392,8 @@ Global
 		{4D3C8B70-075D-48A5-9FF3-EDB87347B136}.Release|Any CPU.Build.0 = Release|Win32
 		{4D3C8B70-075D-48A5-9FF3-EDB87347B136}.Release|Mixed Platforms.ActiveCfg = Release|Win32
 		{4D3C8B70-075D-48A5-9FF3-EDB87347B136}.Release|Mixed Platforms.Build.0 = Release|Win32
-		{4D3C8B70-075D-48A5-9FF3-EDB87347B136}.Release|x64.ActiveCfg = Release|Win32
+		{4D3C8B70-075D-48A5-9FF3-EDB87347B136}.Release|x64.ActiveCfg = Release|x64
+		{4D3C8B70-075D-48A5-9FF3-EDB87347B136}.Release|x64.Build.0 = Release|x64
 		{4D3C8B70-075D-48A5-9FF3-EDB87347B136}.Release|x86.ActiveCfg = Release|Win32
 		{4D3C8B70-075D-48A5-9FF3-EDB87347B136}.Release|x86.Build.0 = Release|Win32
 		{5B4BC824-73FC-49D7-BD9D-CE53AA1AA86E}.CIBuild|Any CPU.ActiveCfg = Release|Any CPU
@@ -491,6 +495,9 @@ Global
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(ExtensibilityGlobals) = postSolution
+		SolutionGuid = {D8A613AE-31BA-4B6D-9BF5-7D43567D428B}
 	EndGlobalSection
 	GlobalSection(MonoDevelopProperties) = preSolution
 		Policies = $0

@@ -47,7 +47,7 @@ namespace Squirrel
         /// will return values from 0-100 and Complete, or Throw</param>
         /// <returns>A completion Observable - either returns a single 
         /// Unit.Default then Complete, or Throw</returns>
-        Task DownloadReleases(IEnumerable<ReleaseEntry> releasesToDownload, Action<int> progress = null);
+        Task DownloadReleases(/*IEnumerable<ReleaseEntry> releasesToDownload*/UpdateInfo updateInfo, /*Action<int> progress = null*/ Action<DownloadProgressData> progressData = null);
 
         /// <summary>
         /// Take an already downloaded set of releases and apply them, 
@@ -150,7 +150,7 @@ namespace Squirrel
                     "Failed to check for updates");
 
                 await This.ErrorIfThrows(() =>
-                    This.DownloadReleases(updateInfo.ReleasesToApply, x => progress(x / 3 + 33)),
+                    This.DownloadReleases(/*updateInfo.ReleasesToApply*/updateInfo, x => progress((int)x.progress / 3 + 33)),
                     "Failed to download updates");
 
                 await This.ErrorIfThrows(() =>

@@ -19,25 +19,64 @@ namespace Squirrel
                 this.rootAppDirectory = rootAppDirectory;
             }
 
-            public async Task DownloadReleases(string updateUrlOrPath, IEnumerable<ReleaseEntry> releasesToDownload, Action<int> progress = null, IFileDownloader urlDownloader = null)
+            public async Task DownloadReleases(string updateUrlOrPath, IEnumerable<ReleaseEntry> releasesToDownload, /*Action<int> progress = null,*/ Action<DownloadProgressData> progressData = null, IFileDownloader urlDownloader = null)
             {
-                progress = progress ?? (_ => { });
+                //progress = progress ?? (_ => { });
+                progressData = progressData ?? (_ => { });
                 urlDownloader = urlDownloader ?? new FileDownloader();
                 var packagesDirectory = Path.Combine(rootAppDirectory, "packages");
 
-                double current = 0;
+                double currentProgress = 0;
                 double toIncrement = 100.0 / releasesToDownload.Count();
+                long currentBytes = 0;
+                long totalBytesToReceive = 0;
+                double currentSpeed = 0;
+                List<ReleaseEntry> downloadReleases = releasesToDownload.ToList();
+
+                foreach (var item in releasesToDownload)
+                {
+                    totalBytesToReceive += item.Filesize;
+                }
 
                 if (Utility.IsHttpUrl(updateUrlOrPath)) {
                     // From Internet
-                    await releasesToDownload.ForEachAsync(async x => {
+                    await releasesToDownload.ForEachAsync(async x =>
+                    {
                         var targetFile = Path.Combine(packagesDirectory, x.Filename);
                         double component = 0;
-                        await downloadRelease(updateUrlOrPath, x, urlDownloader, targetFile, p => {
-                            lock (progress) {
-                                current -= component;
-                                component = toIncrement / 100.0 * p;
-                                progress((int)Math.Round(current += component));
+                        long componentBytes = 0;
+                        double componentSpeed = 0;
+                        double lastSpeed = 0;
+
+                        await downloadRelease(updateUrlOrPath, x, urlDownloader, targetFile, p =>
+                        {
+                            //lock (progress) {
+                            //    current -= component;
+                            //    component = toIncrement / 100.0 * p;
+                            //    progress((int)Math.Round(current += component));
+                            //}
+                            lock (progressData)
+                            {
+                                currentProgress -= component;
+                                currentBytes -= componentBytes;
+                                currentSpeed -= componentSpeed;
+                                component = toIncrement / 100.0 * p.progress;
+                                componentBytes = p.bytesReceived;
+                                componentSpeed = p.speedMBPerSecond;
+
+                                double finalProgress = currentProgress += component;
+                                long finalReceive = currentBytes += componentBytes;
+
+                                bool sameFile = currentSpeed == lastSpeed && currentSpeed != 0 && p.progress != 100;
+                                lastSpeed = currentSpeed;
+                                double totalSpeed = currentSpeed += componentSpeed;
+
+                                if (p.progress == 100 && downloadReleases.Contains(x))
+                                    downloadReleases.Remove(x);
+
+                                double finalSpeed = sameFile || downloadReleases.Count == 0 ? p.speedMBPerSecond : totalSpeed / downloadReleases.Count;
+                                //Console.WriteLine(finalSpeed.ToString() + "***" + p.speedMBPerSecond.ToString() + "---" + downloadReleases.Count.ToString() + "+++" + x.Filename + "|||" + finalProgress.ToString());
+                                progressData(new DownloadProgressData((float)finalProgress, finalReceive, totalBytesToReceive, finalSpeed));
                             }
                         });
 
@@ -53,7 +92,13 @@ namespace Squirrel
                             targetFile,
                             true);
 
-                        lock (progress) progress((int)Math.Round(current += toIncrement));
+                        //lock (progress) progress((int)Math.Round(current += toIncrement));
+                        lock (progressData)
+                        {
+                            DownloadProgressData p = new DownloadProgressData();
+                            p.progress = (float)(currentProgress += toIncrement);
+                            progressData(p);
+                        }
                         checksumPackage(x);
                     });
                 }
@@ -65,7 +110,7 @@ namespace Squirrel
                     Uri.IsWellFormedUriString(x.BaseUrl, UriKind.Absolute);
             }
 
-            Task downloadRelease(string updateBaseUrl, ReleaseEntry releaseEntry, IFileDownloader urlDownloader, string targetFile, Action<int> progress)
+            Task downloadRelease(string updateBaseUrl, ReleaseEntry releaseEntry, IFileDownloader urlDownloader, string targetFile, /*Action<int> progress*/ Action<DownloadProgressData> progressData)
             {
                 var baseUri = Utility.EnsureTrailingSlash(new Uri(updateBaseUrl));
 
@@ -76,7 +121,7 @@ namespace Squirrel
                 var sourceFileUrl = new Uri(baseUri, releaseEntryUrl).AbsoluteUri;
                 File.Delete(targetFile);
 
-                return urlDownloader.DownloadFile(sourceFileUrl, targetFile, progress);
+                return urlDownloader.DownloadFile(sourceFileUrl, targetFile, progressData);
             }
 
             Task checksumAllPackages(IEnumerable<ReleaseEntry> releasesDownloaded)

@@ -17,6 +17,7 @@ using Microsoft.Win32;
 using NuGet;
 using Splat;
 using Squirrel.Shell;
+using System.Windows.Forms;
 
 namespace Squirrel
 {
@@ -57,12 +58,12 @@ namespace Squirrel
             return await checkForUpdate.CheckForUpdate(Utility.LocalReleaseFileForAppDir(rootAppDirectory), updateUrlOrPath, ignoreDeltaUpdates, progress, urlDownloader);
         }
 
-        public async Task DownloadReleases(IEnumerable<ReleaseEntry> releasesToDownload, Action<int> progress = null)
+        public async Task DownloadReleases(/*IEnumerable<ReleaseEntry> releasesToDownload*/UpdateInfo updateInfo, /*Action<int> progress = null*/ Action<DownloadProgressData> progressData = null)
         {
             var downloadReleases = new DownloadReleasesImpl(rootAppDirectory);
             await acquireUpdateLock();
 
-            await downloadReleases.DownloadReleases(updateUrlOrPath, releasesToDownload, progress, urlDownloader);
+            await downloadReleases.DownloadReleases(updateUrlOrPath, updateInfo.ReleasesToApply, /*progress*/ progressData, urlDownloader);
         }
 
         public async Task<string> ApplyReleases(UpdateInfo updateInfo, Action<int> progress = null)
@@ -76,7 +77,7 @@ namespace Squirrel
         public async Task FullInstall(bool silentInstall = false, Action<int> progress = null)
         {
             var updateInfo = await CheckForUpdate();
-            await DownloadReleases(updateInfo.ReleasesToApply);
+            await DownloadReleases(/*updateInfo.ReleasesToApply*/updateInfo);
 
             var applyReleases = new ApplyReleasesImpl(rootAppDirectory);
             await acquireUpdateLock();

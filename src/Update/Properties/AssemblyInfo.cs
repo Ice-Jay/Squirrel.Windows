@@ -6,6 +6,7 @@ using System.Runtime.InteropServices;
 [assembly: AssemblyTitle("Update")]
 [assembly: AssemblyProduct("Update")]
 [assembly: AssemblyDescription("Update")]
+[assembly: AssemblyMetadata("SquirrelAwareVersion", "1")]
 
 // Setting ComVisible to false makes the types in this assembly not visible 
 // to COM components.  If you need to access a type in this assembly from 

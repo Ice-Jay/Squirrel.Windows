@@ -27,13 +27,21 @@ namespace Squirrel
                 this.rootAppDirectory = rootAppDirectory;
             }
 
-            public async Task<string> ApplyReleases(UpdateInfo updateInfo, bool silentInstall, bool attemptingFullInstall, Action<int> progress = null)
+            public async Task<string> ApplyReleases(UpdateInfo updateInfo, bool silentInstall, bool attemptingFullInstall, Action<int> onProgress = null)
             {
-                progress = progress ?? (_ => { });
+                onProgress = onProgress ?? (_ => { });
+                //onProgress(0);
 
-                progress(0);
-                var release = await createFullPackagesFromDeltas(updateInfo.ReleasesToApply, updateInfo.CurrentlyInstalledVersion);
-                progress(10);
+                //修改
+                //var release = await createFullPackagesFromDeltas(updateInfo.ReleasesToApply, updateInfo.CurrentlyInstalledVersion);
+                var release = await createFullPackagesFromDeltas(updateInfo.ReleasesToApply, updateInfo.CurrentlyInstalledVersion, hasBasePackage =>
+                {
+                    if (hasBasePackage) onProgress(0);
+                }, progress =>
+                {
+                    onProgress((int)(.5f * progress));
+                }, true);
+                onProgress(50);
 
                 if (release == null) {
                     if (attemptingFullInstall) {
@@ -41,24 +49,25 @@ namespace Squirrel
                         await invokePostInstall(updateInfo.CurrentlyInstalledVersion.Version, false, true, silentInstall);
                     }
 
-                    progress(100);
+                    onProgress(100);
                     return getDirectoryForRelease(updateInfo.CurrentlyInstalledVersion.Version).FullName;
                 }
 
                 var ret = await this.ErrorIfThrows(() => installPackageToAppDir(updateInfo, release), 
                     "Failed to install package to app dir");
-                progress(30);
+                onProgress(60);
 
                 var currentReleases = await this.ErrorIfThrows(() => updateLocalReleasesFile(),
                     "Failed to update local releases file");
-                progress(50);
+                onProgress(70);
 
                 var newVersion = currentReleases.MaxBy(x => x.Version).First().Version;
-                executeSelfUpdate(newVersion);
+                if (!attemptingFullInstall)
+                    executeSelfUpdate(newVersion);
 
-                await this.ErrorIfThrows(() => invokePostInstall(newVersion, attemptingFullInstall, false, silentInstall),
-                    "Failed to invoke post-install");
-                progress(75);
+                //await this.ErrorIfThrows(() => invokePostInstall(newVersion, attemptingFullInstall, false, silentInstall),
+                //    "Failed to invoke post-install");
+                onProgress(80);
 
                 this.Log().Info("Starting fixPinnedExecutables");
                 this.ErrorIfThrows(() => fixPinnedExecutables(updateInfo.FutureReleaseEntry.Version));
@@ -70,10 +79,10 @@ namespace Squirrel
                 var allExes = appDir.GetFiles("*.exe").Select(x => x.Name).ToList();
 
                 this.ErrorIfThrows(() => trayFixer.RemoveDeadEntries(allExes, rootAppDirectory, updateInfo.FutureReleaseEntry.Version.ToString()));
-                progress(80);
+                onProgress(85);
 
                 unshimOurselves();
-                progress(85);
+                onProgress(90);
 
                 try {
                     var currentVersion = updateInfo.CurrentlyInstalledVersion != null ?
@@ -83,7 +92,7 @@ namespace Squirrel
                 } catch (Exception ex) {
                     this.Log().WarnException("Failed to clean dead versions, continuing anyways", ex);
                 }
-                progress(100);
+                onProgress(100);
 
                 return ret;
             }
@@ -303,36 +312,52 @@ namespace Squirrel
                 });
             }
 
-            async Task<ReleaseEntry> createFullPackagesFromDeltas(IEnumerable<ReleaseEntry> releasesToApply, ReleaseEntry currentVersion)
+            IEnumerable<ReleaseEntry> allReleasesToApply;
+            async Task<ReleaseEntry> createFullPackagesFromDeltas(IEnumerable<ReleaseEntry> releasesToApply, ReleaseEntry currentVersion, Action<bool> onHasBasePackage = null/*新增*/, Action<int> onProgress = null/*新增*/, bool isInitial = false/*新增*/)
             {
                 Contract.Requires(releasesToApply != null);
 
+                if (isInitial)
+                {
+                    allReleasesToApply = releasesToApply;
+                }
+
                 // If there are no remote releases at all, bail
-                if (!releasesToApply.Any()) {
+                if (!releasesToApply.Any())
+                {
                     return null;
                 }
 
                 // If there are no deltas in our list, we're already done
-                if (releasesToApply.All(x => !x.IsDelta)) {
+                if (releasesToApply.All(x => !x.IsDelta))
+                {
                     return releasesToApply.MaxBy(x => x.Version).FirstOrDefault();
                 }
 
-                if (!releasesToApply.All(x => x.IsDelta)) {
+                if (!releasesToApply.All(x => x.IsDelta))
+                {
                     throw new Exception("Cannot apply combinations of delta and full packages");
                 }
-
+                
                 // Smash together our base full package and the nearest delta
-                var ret = await Task.Run(() => {
+                var ret = await Task.Run(() =>
+                {
                     var basePkg = new ReleasePackage(Path.Combine(rootAppDirectory, "packages", currentVersion.Filename));
                     var deltaPkg = new ReleasePackage(Path.Combine(rootAppDirectory, "packages", releasesToApply.First().Filename));
-
                     var deltaBuilder = new DeltaPackageBuilder(Directory.GetParent(this.rootAppDirectory).FullName);
 
                     return deltaBuilder.ApplyDeltaPackage(basePkg, deltaPkg,
-                        Regex.Replace(deltaPkg.InputPackageFile, @"-delta.nupkg$", ".nupkg", RegexOptions.IgnoreCase | RegexOptions.CultureInvariant));
+                        Regex.Replace(deltaPkg.InputPackageFile, @"-delta.nupkg$", ".nupkg", RegexOptions.IgnoreCase | RegexOptions.CultureInvariant), hasBasePackage =>
+                         {
+                             onHasBasePackage?.Invoke(hasBasePackage);/*新增*/
+                         }, progress =>
+                         {
+                             onProgress((int)((float)allReleasesToApply.ToList().FindIndex(x => x == releasesToApply.First()) / allReleasesToApply.Count() * 100 + 1f / allReleasesToApply.Count() * progress));
+                         });
                 });
 
-                if (releasesToApply.Count() == 1) {
+                if (releasesToApply.Count() == 1)
+                {
                     return ReleaseEntry.GenerateFromFile(ret.InputPackageFile);
                 }
 
@@ -340,13 +365,16 @@ namespace Squirrel
                 var entry = ReleaseEntry.GenerateFromFile(fi.OpenRead(), fi.Name);
 
                 // Recursively combine the rest of them
-                return await createFullPackagesFromDeltas(releasesToApply.Skip(1), entry);
+                return await createFullPackagesFromDeltas(releasesToApply.Skip(1), entry, null, progress =>
+                {
+                    onProgress(progress);
+                });
             }
 
             void executeSelfUpdate(SemanticVersion currentVersion)
             {
                 var targetDir = getDirectoryForRelease(currentVersion);
-                var newSquirrel = Path.Combine(targetDir.FullName, "Squirrel.exe");
+                var newSquirrel = Path.Combine(targetDir.FullName, "Update.exe"/*改动，源代码此处为Squirrel.exe*/);
                 if (!File.Exists(newSquirrel)) {
                     return;
                 }
@@ -357,7 +385,6 @@ namespace Squirrel
                 var us = Assembly.GetEntryAssembly();
                 if (us != null && Path.GetFileName(us.Location).Equals("update.exe", StringComparison.OrdinalIgnoreCase)) {
                     var appName = targetDir.Parent.Name;
-
                     Process.Start(newSquirrel, "--updateSelf=" + us.Location);
                     return;
                 }

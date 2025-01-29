@@ -9,8 +9,8 @@ using System.Resources;
 ////[assembly: AssemblyProduct("DEFINED IN ACTUAL ASSEMBLYINFO")]
 ////[assembly: AssemblyDescription("DEFINED IN ACTUAL ASSEMBLYINFO")]
 
-[assembly: AssemblyCompany("GitHub")]
-[assembly: AssemblyCopyright("Copyright © GitHub 2013-2015")]
+[assembly: AssemblyCompany("GDI")]
+[assembly: AssemblyCopyright("Copyright © 2017-2022 GDI. All Rights Reserved.")]
 [assembly: AssemblyTrademark("")]
 [assembly: AssemblyCulture("")]
 [assembly: NeutralResourcesLanguage("en-US")]
@@ -25,4 +25,4 @@ using System.Resources;
 // You can specify all the values or you can default the Build and Revision Numbers 
 // by using the '*' as shown below:
 
-[assembly: AssemblyVersion("1.7.9")]
+[assembly: AssemblyVersion("4.0.3.1910")]//前三位与软件前三位版本号一致，第四位为代码工程SVN版本号
